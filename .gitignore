@@ -1,0 +1,14 @@
+.cache
+compile_commands.json
+
+*.gp4
+*.oelf
+*.o
+*.pkg
+*.prx
+*.sb
+*.spv
+eboot.bin
+param.sfo
+/cube/cube
+/gltf/gltf
