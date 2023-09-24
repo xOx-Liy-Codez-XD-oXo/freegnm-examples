@@ -42,6 +42,11 @@ FRAG_SPVS=$(FRAG_SRCS:%.glsl=%.spv)
 FRAG_PSBS=$(FRAG_SPVS:%.spv=%.sb)
 
 # Custom tools flags
+# cglm needs CGLM_ALL_UNALIGNED
+# because buffers that use its objects may not be aligned
+CFLAGS=-std=c11 -Wall -Wextra -Wpedantic -DCGLM_ALL_UNALIGNED \
+	-DCGLM_FORCE_LEFT_HANDED -DCGLM_FORCE_DEPTH_ZERO_TO_ONE \
+	-I$(SHARED_PATH)/src
 CFLAGS=-std=c11 -Wall -Wextra -Wpedantic -I$(SHARED_PATH)/src
 LDFLAGS=-lc -lkernel -lSceGnmDriver -lSceVideoOut -lgnm
 

@@ -6,7 +6,8 @@ struct PointLight
 	vec3 Position;
 	float Falloff;
 	vec3 Color;
-	float ColorIntensity; };
+	float ColorIntensity;
+};
 // HACK: psbc needs the binding to be manually specified in order
 // to generate correct resource offsets for now
 layout(set = 0, binding = 12) uniform Constants {
@@ -106,7 +107,6 @@ vec3 BRDF(
 		FrostbiteDistanceAttenuation(lightWorldUnorm, light.Falloff);
 
 	if (NoL <= 0.0 || attenuation <= 0.0) {
-	//if (NoL <= 0.0) {
 		return vec3(0.0);
 	}
 
@@ -123,7 +123,6 @@ vec3 BRDF(
 	vec3 color = specular + diffuse;
 
 	return (color * light.Color) * (colorIntensity * attenuation * NoL);
-	//return (color * light.Color) * (colorIntensity * NoL);
 }
 
 vec3 F_SchlickR(float cosTheta, vec3 F0, float roughness) {
