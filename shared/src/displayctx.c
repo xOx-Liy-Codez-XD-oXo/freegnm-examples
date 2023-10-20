@@ -4,24 +4,38 @@
 
 #include <orbis/VideoOut.h>
 
-bool displayctx_init(DisplayContext* ctx, GnmRenderTarget* rt) {
+bool displayctx_init(DisplayContext* ctx) {
 	int res = sceVideoOutOpen(0, ORBIS_VIDEO_OUT_BUS_MAIN, 0, NULL);
 	if (res < 0) {
-		printf("sceVideoOutOpen failed with 0x%x\n", res);
+		printf("display: VideoOutOpen failed with 0x%x\n", res);
 		return false;
 	}
 
 	ctx->videohandle = res;
 
+	OrbisVideoOutResolutionStatus resinfo = {0};
+	res = sceVideoOutGetResolutionStatus(ctx->videohandle, &resinfo);
+	if (res != 0) {
+		printf("display: GetResolution failed with 0x%x\n", res);
+		return false;
+	}
+
+	ctx->screenw = resinfo.width;
+	ctx->screenh = resinfo.height;
+
 	res = sceKernelCreateEqueue(&ctx->flipqueue, "display flip queue");
 	if (res != 0) {
-		printf("sceKernelCreateEqueue failed with 0x%x\n", res);
+		printf("display: CreateEqueue failed with 0x%x\n", res);
 		return false;
 	}
 
 	sceVideoOutSetFlipRate(ctx->videohandle, 0);
 	sceVideoOutAddFlipEvent(ctx->flipqueue, ctx->videohandle, 0);
 
+	return true;
+}
+
+bool displayctx_setrt(DisplayContext* ctx, GnmRenderTarget* rt) {
 	OrbisVideoOutBufferAttribute attr = {0};
 	sceVideoOutSetBufferAttribute(
 		&attr, ORBIS_VIDEO_OUT_PIXEL_FORMAT_A8B8G8R8_SRGB,
@@ -30,9 +44,9 @@ bool displayctx_init(DisplayContext* ctx, GnmRenderTarget* rt) {
 	);
 
 	void* rtaddr = gnmRtGetBaseAddr(rt);
-	res = sceVideoOutRegisterBuffers(ctx->videohandle, 0, &rtaddr, 1, &attr);
+	int res = sceVideoOutRegisterBuffers(ctx->videohandle, 0, &rtaddr, 1, &attr);
 	if (res != 0) {
-		printf("sceVideoOutRegisterBuffers failed with 0x%x\n", res);
+		printf("display: RegisterBuffers failed with 0x%x\n", res);
 		return false;
 	}
 
@@ -44,7 +58,7 @@ bool displayctx_flip(DisplayContext* ctx) {
 		ctx->videohandle, 0, ORBIS_VIDEO_OUT_FLIP_VSYNC, 0
 	);
 	if (res != 0) {
-		printf("sceVideoOutSubmitFlip failed with 0x%x\n", res);
+		printf("display: SubmitFlip failed with 0x%x\n", res);
 		return false;
 	}
 
@@ -52,7 +66,7 @@ bool displayctx_flip(DisplayContext* ctx) {
 	int out = 0;
 	res = sceKernelWaitEqueue(ctx->flipqueue, &ev, 1, &out, 0);
 	if (res != 0) {
-		printf("sceKernelWaitEqueue failed with 0x%x\n", res);
+		printf("display: WaitEqueue failed with 0x%x\n", res);
 		return false;
 	}
 

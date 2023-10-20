@@ -90,19 +90,23 @@ int main(void) {
 		ORBIS_KERNEL_WB_ONION
 	);
 
-	// TODO: fetch screen dimensions dynamically?
-	const uint32_t screenw = 1920;
-	const uint32_t screenh = 1080;
-
 	if (!initclearutility(&garlicmem, &onionmem)) {
 		fatal("Failed to init clear utility");
 	}
 
+	// init video
+	DisplayContext display = {0};
+	if (!displayctx_init(&display)) {
+		fatal("Failed to init video");
+	}
+
+	printf("Display resolution: %ux%u\n", display.screenw, display.screenh);
+
 	// create color render target
 	GnmRenderTarget fbtarget = {0};
 	if (!initcolortarget(
-			&fbtarget, &garlicmem, screenw, screenh, GNM_FMT_R8G8B8A8_SRGB,
-			gnmGpuMode()
+			&fbtarget, &garlicmem, display.screenw, display.screenh,
+			GNM_FMT_R8G8B8A8_SRGB, gnmGpuMode()
 		)) {
 		fatal("Failed to init color render target");
 	}
@@ -110,10 +114,14 @@ int main(void) {
 	// create depth render target
 	GnmDepthRenderTarget depthtarget = {0};
 	if (!initdepthtarget(
-			&depthtarget, &garlicmem, screenw, screenh, 0, 1, 1, GNM_Z_32_FLOAT,
-			GNM_STENCIL_INVALID, gnmGpuMode()
+			&depthtarget, &garlicmem, display.screenw, display.screenh, 0, 1, 1,
+			GNM_Z_32_FLOAT, GNM_STENCIL_INVALID, gnmGpuMode()
 		)) {
 		fatal("Failed to init depth render target");
+	}
+
+	if (!displayctx_setrt(&display, &fbtarget)) {
+		fatal("Failed to init video");
 	}
 
 	// create command buffer
@@ -180,7 +188,7 @@ int main(void) {
 	gnmDrawCmdSetDepthStencilControl(&cmdbuf, &depthstencilctrl);
 
 	// setup viewport
-	setupviewport(&cmdbuf, 0, 0, screenw, screenh, 0.5f, 0.5f);
+	setupviewport(&cmdbuf, 0, 0, display.screenw, display.screenh, 0.5f, 0.5f);
 
 	GnmVsShader* vshader = NULL;
 	GnmPsShader* pshader = NULL;
@@ -342,12 +350,6 @@ int main(void) {
 		1
 	);
 
-	// init video
-	DisplayContext display = {0};
-	if (!displayctx_init(&display, &fbtarget)) {
-		fatal("Failed to init video");
-	}
-
 	void* dcbaddr = cmdbuf.beginptr;
 	uint32_t dcbsize = (cmdbuf.cmdptr - cmdbuf.beginptr) * sizeof(uint32_t);
 	void* ccbaddr = NULL;
@@ -371,7 +373,8 @@ int main(void) {
 	};
 
 	mat4s matproj = glms_perspective(
-		glm_rad(90.0), (float)screenw / (float)screenh, 0.1, 100.0
+		glm_rad(90.0), (float)display.screenw / (float)display.screenh, 0.1,
+		100.0
 	);
 
 	while (1) {

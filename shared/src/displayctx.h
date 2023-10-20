@@ -8,9 +8,12 @@
 typedef struct {
 	int videohandle;
 	OrbisKernelEqueue flipqueue;
+	uint32_t screenw;
+	uint32_t screenh;
 } DisplayContext;
 
-bool displayctx_init(DisplayContext* ctx, GnmRenderTarget* rt);
+bool displayctx_init(DisplayContext* ctx);
+bool displayctx_setrt(DisplayContext* ctx, GnmRenderTarget* rt);
 bool displayctx_flip(DisplayContext* ctx);
 void displayctx_destroy(DisplayContext* ctx);
 

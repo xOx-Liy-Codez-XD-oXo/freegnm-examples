@@ -18,13 +18,7 @@
 #include "pass_model.h"
 #include "pass_ui.h"
 
-_Noreturn void __assert_fail(
-	const char* msg, const char* file, int line, const char* func
-) {
-	fatalf("%s:%i/%s: %s", file, line, func, msg);
-}
-
-static inline struct timespec timespec_diff(
+static inline struct timespec difftimespec(
 	struct timespec start, struct timespec end
 ) {
 	struct timespec res = {0};
@@ -74,21 +68,26 @@ int main(void) {
 
 	gnmSetMessageHandler(&onmessagegnm, NULL);
 
-	const uint32_t screenw = 1920;
-	const uint32_t screenh = 1080;
-
 	if (!initclearutility(&garlicmem, &onionmem)) {
 		fatal("Failed to init clear utility");
 	}
 
-	pass_model_init(&garlicmem, &onionmem, screenw, screenh);
-	pass_ui_init(screenw, screenh, &garlicmem, &onionmem);
+	// init video
+	DisplayContext display = {0};
+	if (!displayctx_init(&display)) {
+		fatal("Failed to init video");
+	}
+
+	printf("Display resolution: %ux%u\n", display.screenw, display.screenh);
+
+	pass_model_init(&garlicmem, &onionmem, display.screenw, display.screenh);
+	pass_ui_init(display.screenw, display.screenh, &garlicmem, &onionmem);
 
 	// create color render target
 	GnmRenderTarget fbtarget = {0};
 	if (!initcolortarget(
-			&fbtarget, &garlicmem, screenw, screenh, GNM_FMT_R8G8B8A8_SRGB,
-			gnmGpuMode()
+			&fbtarget, &garlicmem, display.screenw, display.screenh,
+			GNM_FMT_R8G8B8A8_SRGB, gnmGpuMode()
 		)) {
 		fatal("Failed to init color render target");
 	}
@@ -96,16 +95,14 @@ int main(void) {
 	// create depth render target
 	GnmDepthRenderTarget depthtarget = {0};
 	if (!initdepthtarget(
-			&depthtarget, &garlicmem, screenw, screenh, 0, 1, 1, GNM_Z_32_FLOAT,
-			GNM_STENCIL_INVALID, gnmGpuMode()
+			&depthtarget, &garlicmem, display.screenw, display.screenh, 0, 1, 1,
+			GNM_Z_32_FLOAT, GNM_STENCIL_INVALID, gnmGpuMode()
 		)) {
 		fatal("Failed to init depth render target");
 	}
 
-	// init video
-	DisplayContext display = {0};
-	if (!displayctx_init(&display, &fbtarget)) {
-		fatal("Failed to init video");
+	if (!displayctx_setrt(&display, &fbtarget)) {
+		fatal("Failed to set video render target");
 	}
 
 	const char* modelpath = "/app0/assets/misc/chinesedragon.gltf";
@@ -221,7 +218,7 @@ int main(void) {
 		}
 
 		clock_gettime(CLOCK_MONOTONIC, &timeend);
-		struct timespec timediff = timespec_diff(timestart, timeend);
+		struct timespec timediff = difftimespec(timestart, timeend);
 		frametime = timediff.tv_sec +
 					((float)timediff.tv_nsec / (1000.0 * 1000.0 * 1000.0)
 					);	// nano to seconds
