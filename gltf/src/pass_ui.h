@@ -13,8 +13,7 @@ typedef struct {
 } ui_color;
 
 void pass_ui_init(
-	uint32_t screenwidth, uint32_t screenheight, MemoryAllocator* garlicmem,
-	MemoryAllocator* onionmem
+	uint32_t viewwidth, uint32_t viewheight, MemoryAllocator* glrmem
 );
 
 void pass_ui_begin(GnmCommandBuffer* cmd);

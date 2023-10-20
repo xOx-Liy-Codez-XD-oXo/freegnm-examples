@@ -83,14 +83,8 @@ int main(void) {
 			ORBIS_KERNEL_PROT_GPU_READ | ORBIS_KERNEL_PROT_GPU_WRITE,
 		ORBIS_KERNEL_WC_GARLIC
 	);
-	MemoryAllocator onionmem = memalloc_init(
-		8 * 1024 * 1024,  // 8mB
-		ORBIS_KERNEL_PROT_CPU_READ | ORBIS_KERNEL_PROT_CPU_RW |
-			ORBIS_KERNEL_PROT_GPU_READ | ORBIS_KERNEL_PROT_GPU_WRITE,
-		ORBIS_KERNEL_WB_ONION
-	);
 
-	if (!initclearutility(&garlicmem, &onionmem)) {
+	if (!initclearutility(&garlicmem)) {
 		fatal("Failed to init clear utility");
 	}
 
@@ -192,14 +186,10 @@ int main(void) {
 
 	GnmVsShader* vshader = NULL;
 	GnmPsShader* pshader = NULL;
-	if (!loadvshader(
-			&vshader, &garlicmem, &onionmem, "/app0/assets/misc/cube.vert.sb"
-		)) {
+	if (!loadvshader(&vshader, &garlicmem, "/app0/assets/misc/cube.vert.sb")) {
 		fatal("Failed to load vertex shader");
 	}
-	if (!loadpshader(
-			&pshader, &garlicmem, &onionmem, "/app0/assets/misc/cube.frag.sb"
-		)) {
+	if (!loadpshader(&pshader, &garlicmem, "/app0/assets/misc/cube.frag.sb")) {
 		fatal("Failed to load fragment shader");
 	}
 

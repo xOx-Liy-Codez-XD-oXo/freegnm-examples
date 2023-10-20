@@ -96,23 +96,17 @@ static inline void appendquad(
 }
 
 void pass_ui_init(
-	uint32_t viewwidth, uint32_t viewheight, MemoryAllocator* garlicmem,
-	MemoryAllocator* onionmem
+	uint32_t viewwidth, uint32_t viewheight, MemoryAllocator* glrmem
 ) {
 	// load font
-	s_ui.font = r_LoadFontFromFile(
-		"/app0/assets/fonts/Hack-Regular.ttf", 16, garlicmem
-	);
+	s_ui.font =
+		r_LoadFontFromFile("/app0/assets/fonts/Hack-Regular.ttf", 16, glrmem);
 
 	// load shaders
-	if (!loadvshader(
-			&s_ui.fontvs, garlicmem, onionmem, "/app0/assets/misc/font.vert.sb"
-		)) {
+	if (!loadvshader(&s_ui.fontvs, glrmem, "/app0/assets/misc/font.vert.sb")) {
 		fatal("ui: failed to load font VS");
 	}
-	if (!loadpshader(
-			&s_ui.fontps, garlicmem, onionmem, "/app0/assets/misc/font.frag.sb"
-		)) {
+	if (!loadpshader(&s_ui.fontps, glrmem, "/app0/assets/misc/font.frag.sb")) {
 		fatal("ui: failed to load font PS");
 	}
 
@@ -128,7 +122,7 @@ void pass_ui_init(
 
 	// init const buffer
 	s_ui.fontcbufmem = memalloc_alloc(
-		garlicmem, sizeof(FontConstants), GNM_ALIGNMENT_BUFFER_BYTES
+		glrmem, sizeof(FontConstants), GNM_ALIGNMENT_BUFFER_BYTES
 	);
 	assert(s_ui.fontcbufmem);
 	s_ui.fontcbuf =
@@ -136,13 +130,13 @@ void pass_ui_init(
 
 	// setup vertex buffer
 	s_ui.fontvertmem = memalloc_alloc(
-		garlicmem, sizeof(FontVertex) * MAX_FONT_VERTICES,
+		glrmem, sizeof(FontVertex) * MAX_FONT_VERTICES,
 		GNM_ALIGNMENT_BUFFER_BYTES
 	);
 	assert(s_ui.fontvertmem);
 
 	s_ui.fontvertbufs = memalloc_alloc(
-		garlicmem, sizeof(GnmBuffer) * 3, GNM_ALIGNMENT_BUFFER_BYTES
+		glrmem, sizeof(GnmBuffer) * 3, GNM_ALIGNMENT_BUFFER_BYTES
 	);
 	assert(s_ui.fontvertbufs);
 	s_ui.fontvertbufs[0] = gnmCreateVertexBuffer(
@@ -178,7 +172,7 @@ void pass_ui_init(
 	fsbs.semanticsremaptable = remapsemantictable;
 
 	s_ui.fontfetchmem = memalloc_alloc(
-		garlicmem, fsbs.fetchshaderbuffersize, GNM_ALIGNMENT_FETCHSHADER_BYTES
+		glrmem, fsbs.fetchshaderbuffersize, GNM_ALIGNMENT_FETCHSHADER_BYTES
 	);
 	assert(s_ui.fontfetchmem);
 

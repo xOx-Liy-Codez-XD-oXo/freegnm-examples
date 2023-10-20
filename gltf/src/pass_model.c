@@ -52,21 +52,16 @@ typedef struct {
 static PassModel s_mpass = {0};
 
 void pass_model_init(
-	MemoryAllocator* garlicmem, MemoryAllocator* onionmem, uint32_t screenwidth,
-	uint32_t screenheight
+	MemoryAllocator* glrmem, uint32_t screenwidth, uint32_t screenheight
 ) {
 	s_mpass.viewwidth = screenwidth;
 	s_mpass.viewheight = screenheight;
 
 	// load shaders
-	if (!loadvshader(
-			&s_mpass.vsh, garlicmem, onionmem, "/app0/assets/misc/gltf.vert.sb"
-		)) {
+	if (!loadvshader(&s_mpass.vsh, glrmem, "/app0/assets/misc/gltf.vert.sb")) {
 		fatal("Failed to load GLTF vertex shader");
 	}
-	if (!loadpshader(
-			&s_mpass.psh, garlicmem, onionmem, "/app0/assets/misc/gltf.frag.sb"
-		)) {
+	if (!loadpshader(&s_mpass.psh, glrmem, "/app0/assets/misc/gltf.frag.sb")) {
 		fatal("Failed to load GLTF frag shader");
 	}
 
@@ -81,9 +76,8 @@ void pass_model_init(
 	};
 
 	// init const buffer
-	s_mpass.cbufmem = memalloc_alloc(
-		garlicmem, sizeof(ConstBuffer), GNM_ALIGNMENT_BUFFER_BYTES
-	);
+	s_mpass.cbufmem =
+		memalloc_alloc(glrmem, sizeof(ConstBuffer), GNM_ALIGNMENT_BUFFER_BYTES);
 	if (!s_mpass.cbufmem) {
 		fatal("Failed to allocate const buffer");
 	}
@@ -110,7 +104,7 @@ void pass_model_init(
 	fsbs.semanticsremaptable = remapsemantictable;
 
 	s_mpass.fetchshmem = memalloc_alloc(
-		garlicmem, fsbs.fetchshaderbuffersize, GNM_ALIGNMENT_FETCHSHADER_BYTES
+		glrmem, fsbs.fetchshaderbuffersize, GNM_ALIGNMENT_FETCHSHADER_BYTES
 	);
 	if (!s_mpass.fetchshmem) {
 		fatal("allocgarlicmem for fetch shader failed");

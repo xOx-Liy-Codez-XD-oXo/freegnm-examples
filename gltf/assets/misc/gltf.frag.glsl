@@ -80,8 +80,6 @@ float FrostbiteDistanceAttenuation(
 ) {
 	float sqrDist = dot(unormLightVector, unormLightVector);
 
-	// source uses inches for their units
-	// old attenuation code used 0.01 (1cm)
 	float attenuation =
 		1.0 / (max(sqrDist, 0.01 * 0.01));
 	attenuation *= SmoothDistanceAtt(sqrDist, invSqrAttRadius);

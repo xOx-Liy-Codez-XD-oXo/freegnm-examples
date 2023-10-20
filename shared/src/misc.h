@@ -24,12 +24,10 @@ void setupviewport(
 );
 
 bool loadvshader(
-	GnmVsShader** outvs, MemoryAllocator* garlicmem, MemoryAllocator* onionmem,
-	const char* vspath
+	GnmVsShader** outvs, MemoryAllocator* garlicmem, const char* vspath
 );
 bool loadpshader(
-	GnmPsShader** outps, MemoryAllocator* garlicmem, MemoryAllocator* onionmem,
-	const char* pspath
+	GnmPsShader** outps, MemoryAllocator* garlicmem, const char* pspath
 );
 
 bool loadgnftexture(
@@ -43,7 +41,7 @@ bool loadlineartexturemem(
 	size_t indatasize
 );
 
-bool initclearutility(MemoryAllocator* garlicmem, MemoryAllocator* onionmem);
+bool initclearutility(MemoryAllocator* garlicmem);
 void clearcolortarget(
 	GnmCommandBuffer* cmd, GnmRenderTarget* rt, const float clearvalue[4]
 );

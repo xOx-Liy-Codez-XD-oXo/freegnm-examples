@@ -245,8 +245,7 @@ static bool parseshader(
 }
 
 bool loadvshader(
-	GnmVsShader** outvs, MemoryAllocator* garlicmem, MemoryAllocator* onionmem,
-	const char* vspath
+	GnmVsShader** outvs, MemoryAllocator* garlicmem, const char* vspath
 ) {
 	void* vsdata = NULL;
 	size_t vssize = 0;
@@ -269,8 +268,7 @@ bool loadvshader(
 	const GnmVsShader* vsshader = (const GnmVsShader*)vscommon;
 	const uint32_t vsshadersize = gnmVsShaderCalcSize(vsshader);
 
-	GnmVsShader* vs =
-		memalloc_alloc(onionmem, vsshadersize, GNM_ALIGNMENT_BUFFER_BYTES);
+	GnmVsShader* vs = malloc(vsshadersize);
 	if (!vs) {
 		puts("loadvshader: failed to alloc shader memory");
 		return false;
@@ -292,8 +290,7 @@ bool loadvshader(
 }
 
 bool loadpshader(
-	GnmPsShader** outps, MemoryAllocator* garlicmem, MemoryAllocator* onionmem,
-	const char* pspath
+	GnmPsShader** outps, MemoryAllocator* garlicmem, const char* pspath
 ) {
 	void* psdata = NULL;
 	size_t pssize = 0;
@@ -316,8 +313,7 @@ bool loadpshader(
 	const GnmPsShader* psshader = (const GnmPsShader*)pscommon;
 	const uint32_t psshadersize = gnmPsShaderCalcSize(psshader);
 
-	GnmPsShader* ps =
-		memalloc_alloc(onionmem, psshadersize, GNM_ALIGNMENT_BUFFER_BYTES);
+	GnmPsShader* ps = malloc(psshadersize);
 	if (!ps) {
 		puts("loadpshader: failed to alloc shader memory");
 		return false;
@@ -507,10 +503,10 @@ _Static_assert(sizeof(ClearDescSet) == 0x10, "");
 
 static GnmPsShader* s_psclear = NULL;
 
-bool initclearutility(MemoryAllocator* garlicmem, MemoryAllocator* onionmem) {
+bool initclearutility(MemoryAllocator* garlicmem) {
 	// setup pixel clear shader
 	if (!loadpshader(
-			&s_psclear, garlicmem, onionmem, "/app0/assets/misc/clear.frag.sb"
+			&s_psclear, garlicmem, "/app0/assets/misc/clear.frag.sb"
 		)) {
 		puts("clear: failed to load clear pixel shader");
 		return false;

@@ -59,16 +59,10 @@ int main(void) {
 			ORBIS_KERNEL_PROT_GPU_READ | ORBIS_KERNEL_PROT_GPU_WRITE,
 		ORBIS_KERNEL_WC_GARLIC
 	);
-	MemoryAllocator onionmem = memalloc_init(
-		32 * 1024 * 1024,  // 32mB
-		ORBIS_KERNEL_PROT_CPU_READ | ORBIS_KERNEL_PROT_CPU_RW |
-			ORBIS_KERNEL_PROT_GPU_READ | ORBIS_KERNEL_PROT_GPU_WRITE,
-		ORBIS_KERNEL_WB_ONION
-	);
 
 	gnmSetMessageHandler(&onmessagegnm, NULL);
 
-	if (!initclearutility(&garlicmem, &onionmem)) {
+	if (!initclearutility(&garlicmem)) {
 		fatal("Failed to init clear utility");
 	}
 
@@ -80,8 +74,8 @@ int main(void) {
 
 	printf("Display resolution: %ux%u\n", display.screenw, display.screenh);
 
-	pass_model_init(&garlicmem, &onionmem, display.screenw, display.screenh);
-	pass_ui_init(display.screenw, display.screenh, &garlicmem, &onionmem);
+	pass_model_init(&garlicmem, display.screenw, display.screenh);
+	pass_ui_init(display.screenw, display.screenh, &garlicmem);
 
 	// create color render target
 	GnmRenderTarget fbtarget = {0};

@@ -17,8 +17,7 @@ typedef struct {
 _Static_assert(sizeof(PointLight) == 0x20, "");
 
 void pass_model_init(
-	MemoryAllocator* garlicmem, MemoryAllocator* onionmem, uint32_t screenwidth,
-	uint32_t screenheight
+	MemoryAllocator* glrmem, uint32_t screenwidth, uint32_t screenheight
 );
 void pass_model_update(void);
 void pass_model_render(
