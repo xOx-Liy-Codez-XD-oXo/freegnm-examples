@@ -7,7 +7,7 @@ They're meant to be simple and straightforward to understand.
 **NOTES:**
 
 - There's a bug/glitch where the framebuffer doesn't display some of the pixels at the top correctly. It might be memory related.
-- None of these examples were tested on a Pro/NEO PS4 and may not work.
+- None of these examples were tested on a Pro/NEO PS4 and may not work there.
 
 ## Examples available
 
@@ -23,9 +23,11 @@ Renders a GLTF's model with some basic PBR parameters.
 
 ![Screenshot](gltf/screenshot.png)
 
-## References
+### Primitives
 
-Some of the samples are based on [Vulkan samples from Sascha Willems](https://github.com/SaschaWillems/Vulkan) 
+Shows the unique primitive types available in the PS4 hardware.
+
+![Screenshot](primitives/screenshot.png)
 
 ## Building
 
@@ -45,6 +47,12 @@ export OO_PS4_TOOLCHAIN=/path/to/OpenOrbis-PS4-Toolchain
 make
 ```
 
+## References
+
+Some of the samples are based on [Vulkan samples from Sascha Willems](https://github.com/SaschaWillems/Vulkan).
+
+Some PBR algorithms are taken from [Moving Frostbite to Physically Based Rendering](https://seblagarde.files.wordpress.com/2015/07/course_notes_moving_frostbite_to_pbr_v32.pdf).
+
 ## Libraries and resources
 
 The following libraries are used:
@@ -57,9 +65,9 @@ The following libraries are used:
 
 The following resources are used:
 
-- Chinese Dragon model
-- Hack typefont
-- TempleOS logo
+- Chinese Dragon model by Morgan McGuire
+- Hack typeface by SourceFoundry
+- TempleOS logo by Terry A. Davis
 
 ## License
 
