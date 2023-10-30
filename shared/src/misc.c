@@ -282,7 +282,7 @@ bool loadvshader(
 
 	memcpy(vs, vsshader, vsshadersize);
 	memcpy(vsgpucode, vscode, vscodesize);
-	gnmVsStageRegPatchGpuAddr(&vs->registers, vsgpucode);
+	gnmVsRegsSetAddress(&vs->registers, vsgpucode);
 
 	free(vsdata);
 	*outvs = vs;
@@ -327,7 +327,7 @@ bool loadpshader(
 
 	memcpy(ps, psshader, psshadersize);
 	memcpy(psgpucode, pscode, pscodesize);
-	gnmPsStageRegPatchGpuAddr(&ps->registers, psgpucode);
+	gnmPsRegsSetAddress(&ps->registers, psgpucode);
 
 	ps->registers.spibaryccntl = 0;
 

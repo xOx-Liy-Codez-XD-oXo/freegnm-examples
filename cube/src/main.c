@@ -268,39 +268,33 @@ int main(void) {
 		vertmem + 24, GNM_FMT_R32G32_FLOAT, 8 * sizeof(float), 36
 	);
 
-	const uint32_t remapsemantictable[2] = {0, 1};
-
 	// prepare fetch shader
-	GnmFetchShaderBuildState fsbs = {0};
-	GnmError err = gnmGenerateFetchShaderBuildStateVs(
-		&fsbs, &vshader->registers, vshader->numinputsemantics, NULL, 0, 0, 0
-	);
+	const GnmFetchShaderCreateInfo fetchci = {
+		.regs = &vshader->registers,
+		.vtxinputs = gnmVsShaderInputSemanticTable(vshader),
+		.numvtxinputs = vshader->numinputsemantics,
+		.inputusages = gnmVsShaderInputUsageSlotTable(vshader),
+		.numinputusages = vshader->common.numinputusageslots,
+	};
+	uint32_t fetchsize = 0;
+	GnmError err = gnmFetchShaderCalcSize(&fetchsize, &fetchci);
 	if (err != GNM_ERROR_OK) {
-		fatal("Failed to create fetch shader state");
+		fatalf("Failed to calc fetch shader size with %s", gnmStrError(err));
 	}
 
-	fsbs.numinputsemantics = vshader->numinputsemantics;
-	fsbs.inputsemantics = gnmVsShaderInputSemanticTable(vshader);
-	fsbs.numinputusageslots = vshader->common.numinputusageslots;
-	fsbs.inputusageslots = gnmVsShaderInputUsageSlotTable(vshader);
-	fsbs.numelemsinremaptable = uasize(remapsemantictable);
-	fsbs.semanticsremaptable = remapsemantictable;
-
-	void* fetchshmem = memalloc_alloc(
-		&garlicmem, fsbs.fetchshaderbuffersize, GNM_ALIGNMENT_FETCHSHADER_BYTES
-	);
+	void* fetchshmem =
+		memalloc_alloc(&garlicmem, fetchsize, GNM_ALIGNMENT_FETCHSHADER_BYTES);
 	if (!fetchshmem) {
 		fatal("allocgarlicmem for fetch shader failed");
 	}
 
-	err = gnmGenerateFetchShader(fetchshmem, fsbs.fetchshaderbuffersize, &fsbs);
+	GnmFetchShaderResults fetchres = {0};
+	err = gnmCreateFetchShader(fetchshmem, fetchsize, &fetchci, &fetchres);
 	if (err != GNM_ERROR_OK) {
 		fatal("Failed to create fetch shader");
 	}
 
-	gnmVsStageRegSetFetchShaderModifier(
-		&vshader->registers, fsbs.shadermodifier
-	);
+	gnmVsRegsSetFetchShaderModifier(&vshader->registers, &fetchres);
 
 	gnmDrawCmdSetVsShader(&cmdbuf, &vshader->registers, 0);
 	gnmDrawCmdSetPsShader(&cmdbuf, &pshader->registers);
@@ -313,14 +307,10 @@ int main(void) {
 	// set desciprtor set in pixel shader
 	gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_PS, 0, psdescset);
 
-	uint32_t psusagetable[32] = {0};
-	gnmCalcPsShaderUsageTable(
-		psusagetable, gnmVsShaderExportSemanticTable(vshader),
+	gnmDrawCmdSetPsInputUsage(
+		&cmdbuf, gnmVsShaderExportSemanticTable(vshader),
 		vshader->numexportsemantics, gnmPsShaderInputSemanticTable(pshader),
 		pshader->numinputsemantics
-	);
-	gnmDrawCmdSetPsShaderUsage(
-		&cmdbuf, psusagetable, pshader->numinputsemantics
 	);
 
 	// draw triangle

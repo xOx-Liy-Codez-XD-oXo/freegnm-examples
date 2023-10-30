@@ -85,41 +85,34 @@ void pass_model_init(
 		gnmCreateConstBuffer(s_mpass.cbufmem, sizeof(ConstBuffer));
 
 	// prepare fetch shader
-	GnmFetchShaderBuildState fsbs = {0};
-	GnmError err = gnmGenerateFetchShaderBuildStateVs(
-		&fsbs, &s_mpass.vsh->registers, s_mpass.vsh->numinputsemantics, NULL, 0,
-		0, 0
-	);
+	const GnmFetchShaderCreateInfo fetchci = {
+		.regs = &s_mpass.vsh->registers,
+		.vtxinputs = gnmVsShaderInputSemanticTable(s_mpass.vsh),
+		.numvtxinputs = s_mpass.vsh->numinputsemantics,
+		.inputusages = gnmVsShaderInputUsageSlotTable(s_mpass.vsh),
+		.numinputusages = s_mpass.vsh->common.numinputusageslots,
+	};
+	uint32_t fetchsize = 0;
+	GnmError err = gnmFetchShaderCalcSize(&fetchsize, &fetchci);
 	if (err != GNM_ERROR_OK) {
-		fatalf("Failed to build fetch shader state with %s", gnmStrError(err));
+		fatalf("Failed to calc fetch shader size with %s", gnmStrError(err));
 	}
 
-	const uint32_t remapsemantictable[4] = {0, 1, 2, 3};
-
-	fsbs.numinputsemantics = s_mpass.vsh->numinputsemantics;
-	fsbs.inputsemantics = gnmVsShaderInputSemanticTable(s_mpass.vsh);
-	fsbs.numinputusageslots = s_mpass.vsh->common.numinputusageslots;
-	fsbs.inputusageslots = gnmVsShaderInputUsageSlotTable(s_mpass.vsh);
-	fsbs.numelemsinremaptable = uasize(remapsemantictable);
-	fsbs.semanticsremaptable = remapsemantictable;
-
-	s_mpass.fetchshmem = memalloc_alloc(
-		glrmem, fsbs.fetchshaderbuffersize, GNM_ALIGNMENT_FETCHSHADER_BYTES
-	);
+	s_mpass.fetchshmem =
+		memalloc_alloc(glrmem, fetchsize, GNM_ALIGNMENT_FETCHSHADER_BYTES);
 	if (!s_mpass.fetchshmem) {
 		fatal("allocgarlicmem for fetch shader failed");
 	}
 
-	err = gnmGenerateFetchShader(
-		s_mpass.fetchshmem, fsbs.fetchshaderbuffersize, &fsbs
+	GnmFetchShaderResults fetchres = {0};
+	err = gnmCreateFetchShader(
+		s_mpass.fetchshmem, fetchsize, &fetchci, &fetchres
 	);
 	if (err != GNM_ERROR_OK) {
 		fatalf("Failed to create fetch shader with %s", gnmStrError(err));
 	}
 
-	gnmVsStageRegSetFetchShaderModifier(
-		&s_mpass.vsh->registers, fsbs.shadermodifier
-	);
+	gnmVsRegsSetFetchShaderModifier(&s_mpass.vsh->registers, &fetchres);
 
 	// init const buffer data
 	s_mpass.location = (vec3s){
@@ -223,15 +216,11 @@ void pass_model_render(
 	// vertex buffer and descriptor set are applied later when drawing meshes
 	gnmDrawCmdSetPointerUserData(cmd, GNM_STAGE_VS, 0, s_mpass.fetchshmem);
 
-	uint32_t psusagetable[32] = {0};
-	gnmCalcPsShaderUsageTable(
-		psusagetable, gnmVsShaderExportSemanticTable(s_mpass.vsh),
+	gnmDrawCmdSetPsInputUsage(
+		cmd, gnmVsShaderExportSemanticTable(s_mpass.vsh),
 		s_mpass.vsh->numexportsemantics,
 		gnmPsShaderInputSemanticTable(s_mpass.psh),
 		s_mpass.psh->numinputsemantics
-	);
-	gnmDrawCmdSetPsShaderUsage(
-		cmd, psusagetable, s_mpass.psh->numinputsemantics
 	);
 
 	// draw meshes

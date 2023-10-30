@@ -163,39 +163,33 @@ int main(void) {
 		vertmem, GNM_FMT_R32G32_FLOAT, 2 * sizeof(float), 8
 	);
 
-	const uint32_t remapsemantictable[1] = {0};
-
 	// prepare fetch shader
-	GnmFetchShaderBuildState fsbs = {0};
-	GnmError err = gnmGenerateFetchShaderBuildStateVs(
-		&fsbs, &vshader->registers, vshader->numinputsemantics, NULL, 0, 0, 0
-	);
+	const GnmFetchShaderCreateInfo fetchci = {
+		.regs = &vshader->registers,
+		.vtxinputs = gnmVsShaderInputSemanticTable(vshader),
+		.numvtxinputs = vshader->numinputsemantics,
+		.inputusages = gnmVsShaderInputUsageSlotTable(vshader),
+		.numinputusages = vshader->common.numinputusageslots,
+	};
+	uint32_t fetchsize = 0;
+	GnmError err = gnmFetchShaderCalcSize(&fetchsize, &fetchci);
 	if (err != GNM_ERROR_OK) {
-		fatal("Failed to create fetch shader state");
+		fatalf("Failed to calc fetch shader size with %s", gnmStrError(err));
 	}
 
-	fsbs.numinputsemantics = vshader->numinputsemantics;
-	fsbs.inputsemantics = gnmVsShaderInputSemanticTable(vshader);
-	fsbs.numinputusageslots = vshader->common.numinputusageslots;
-	fsbs.inputusageslots = gnmVsShaderInputUsageSlotTable(vshader);
-	fsbs.numelemsinremaptable = uasize(remapsemantictable);
-	fsbs.semanticsremaptable = remapsemantictable;
-
-	void* fetchshmem = memalloc_alloc(
-		&garlicmem, fsbs.fetchshaderbuffersize, GNM_ALIGNMENT_FETCHSHADER_BYTES
-	);
+	void* fetchshmem =
+		memalloc_alloc(&garlicmem, fetchsize, GNM_ALIGNMENT_FETCHSHADER_BYTES);
 	if (!fetchshmem) {
-		fatal("alloc for fetch shader failed");
+		fatal("allocgarlicmem for fetch shader failed");
 	}
 
-	err = gnmGenerateFetchShader(fetchshmem, fsbs.fetchshaderbuffersize, &fsbs);
+	GnmFetchShaderResults fetchres = {0};
+	err = gnmCreateFetchShader(fetchshmem, fetchsize, &fetchci, &fetchres);
 	if (err != GNM_ERROR_OK) {
 		fatal("Failed to create fetch shader");
 	}
 
-	gnmVsStageRegSetFetchShaderModifier(
-		&vshader->registers, fsbs.shadermodifier
-	);
+	gnmVsRegsSetFetchShaderModifier(&vshader->registers, &fetchres);
 
 	gnmDrawCmdSetVsShader(&cmdbuf, &vshader->registers, 0);
 	gnmDrawCmdSetPsShader(&cmdbuf, &pshader->registers);
@@ -204,14 +198,10 @@ int main(void) {
 	gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_VS, 0, fetchshmem);
 	gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_VS, 2, vertbuffers);
 
-	uint32_t psusagetable[32] = {0};
-	gnmCalcPsShaderUsageTable(
-		psusagetable, gnmVsShaderExportSemanticTable(vshader),
+	gnmDrawCmdSetPsInputUsage(
+		&cmdbuf, gnmVsShaderExportSemanticTable(vshader),
 		vshader->numexportsemantics, gnmPsShaderInputSemanticTable(pshader),
 		pshader->numinputsemantics
-	);
-	gnmDrawCmdSetPsShaderUsage(
-		&cmdbuf, psusagetable, pshader->numinputsemantics
 	);
 
 	static const uint16_t rectindices[6] = {0, 1, 2, 4, 5, 6};

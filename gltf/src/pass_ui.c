@@ -153,39 +153,31 @@ void pass_ui_init(
 	);
 
 	// prepare fetch shader
-	GnmFetchShaderBuildState fsbs = {0};
-	GnmError err = gnmGenerateFetchShaderBuildStateVs(
-		&fsbs, &s_ui.fontvs->registers, s_ui.fontvs->numinputsemantics, NULL, 0,
-		0, 0
-	);
+	const GnmFetchShaderCreateInfo fetchci = {
+		.regs = &s_ui.fontvs->registers,
+		.vtxinputs = gnmVsShaderInputSemanticTable(s_ui.fontvs),
+		.numvtxinputs = s_ui.fontvs->numinputsemantics,
+		.inputusages = gnmVsShaderInputUsageSlotTable(s_ui.fontvs),
+		.numinputusages = s_ui.fontvs->common.numinputusageslots,
+	};
+	uint32_t fetchsize = 0;
+	GnmError err = gnmFetchShaderCalcSize(&fetchsize, &fetchci);
 	if (err != GNM_ERROR_OK) {
-		fatalf("Failed to build fetch shader state with %s", gnmStrError(err));
+		fatalf("Failed to calc fetch shader size with %s", gnmStrError(err));
 	}
 
-	const uint32_t remapsemantictable[3] = {0, 1, 2};
-
-	fsbs.numinputsemantics = s_ui.fontvs->numinputsemantics;
-	fsbs.inputsemantics = gnmVsShaderInputSemanticTable(s_ui.fontvs);
-	fsbs.numinputusageslots = s_ui.fontvs->common.numinputusageslots;
-	fsbs.inputusageslots = gnmVsShaderInputUsageSlotTable(s_ui.fontvs);
-	fsbs.numelemsinremaptable = uasize(remapsemantictable);
-	fsbs.semanticsremaptable = remapsemantictable;
-
-	s_ui.fontfetchmem = memalloc_alloc(
-		glrmem, fsbs.fetchshaderbuffersize, GNM_ALIGNMENT_FETCHSHADER_BYTES
-	);
+	s_ui.fontfetchmem =
+		memalloc_alloc(glrmem, fetchsize, GNM_ALIGNMENT_FETCHSHADER_BYTES);
 	assert(s_ui.fontfetchmem);
 
-	err = gnmGenerateFetchShader(
-		s_ui.fontfetchmem, fsbs.fetchshaderbuffersize, &fsbs
-	);
+	GnmFetchShaderResults fetchres = {0};
+	err =
+		gnmCreateFetchShader(s_ui.fontfetchmem, fetchsize, &fetchci, &fetchres);
 	if (err != GNM_ERROR_OK) {
 		fatalf("Failed to create fetch shader with %s", gnmStrError(err));
 	}
 
-	gnmVsStageRegSetFetchShaderModifier(
-		&s_ui.fontvs->registers, fsbs.shadermodifier
-	);
+	gnmVsRegsSetFetchShaderModifier(&s_ui.fontvs->registers, &fetchres);
 
 	// init const buffer data
 	*s_ui.fontcbufmem = (FontConstants){
@@ -248,15 +240,11 @@ void pass_ui_begin(GnmCommandBuffer* cmd) {
 	};
 	gnmDrawCmdSetPointerUserData(cmd, GNM_STAGE_PS, 0, psdescset);
 
-	uint32_t psusagetable[32] = {0};
-	gnmCalcPsShaderUsageTable(
-		psusagetable, gnmVsShaderExportSemanticTable(s_ui.fontvs),
+	gnmDrawCmdSetPsInputUsage(
+		cmd, gnmVsShaderExportSemanticTable(s_ui.fontvs),
 		s_ui.fontvs->numexportsemantics,
 		gnmPsShaderInputSemanticTable(s_ui.fontps),
 		s_ui.fontps->numinputsemantics
-	);
-	gnmDrawCmdSetPsShaderUsage(
-		cmd, psusagetable, s_ui.fontps->numinputsemantics
 	);
 }
 
