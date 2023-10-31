@@ -29,7 +29,7 @@ Renders a GLTF's model with some basic PBR parameters.
 
 ![Screenshot](gltf/screenshot.png)
 
-### GLTF
+### Instances
 
 Example of instanced draw calls usage
 
