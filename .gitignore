@@ -12,4 +12,5 @@ eboot.bin
 param.sfo
 /cube/cube
 /gltf/gltf
+/instances/instances
 /primitives/primitives

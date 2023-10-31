@@ -26,9 +26,9 @@ SRCS=\
 	$(SHARED_PATH)/src/u/utility.c \
 	$(SHARED_PATH)/src/displayctx.c \
 	$(SHARED_PATH)/src/font2d.c \
+	$(SHARED_PATH)/src/gltfmodel.c \
 	$(SHARED_PATH)/src/memalloc.c \
 	$(SHARED_PATH)/src/misc.c \
-	src/gltfmodel.c \
 	src/main.c \
 	src/pass_model.c \
 	src/pass_ui.c

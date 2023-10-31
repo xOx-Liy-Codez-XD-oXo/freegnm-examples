@@ -17,17 +17,23 @@ Draws a 3D textured cube.
 
 ![Screenshot](cube/screenshot.png)
 
+### Primitives
+
+Shows the unique primitive types available in the PS4 hardware.
+
+![Screenshot](primitives/screenshot.png)
+
 ### GLTF
 
 Renders a GLTF's model with some basic PBR parameters.
 
 ![Screenshot](gltf/screenshot.png)
 
-### Primitives
+### GLTF
 
-Shows the unique primitive types available in the PS4 hardware.
+Example of instanced draw calls usage
 
-![Screenshot](primitives/screenshot.png)
+![Screenshot](instances/screenshot.png)
 
 ## Building
 
