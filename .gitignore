@@ -12,6 +12,7 @@ eboot.bin
 param.sfo
 /cube/cube
 /gltf/gltf
+/indirect/indirect
 /instances/instances
 /primitives/primitives
 /triangle/tri

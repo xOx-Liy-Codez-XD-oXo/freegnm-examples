@@ -37,9 +37,15 @@ Renders a GLTF's model with some basic PBR parameters.
 
 ### Instances
 
-Example of instanced draw calls usage
+Example of instanced draw calls usage.
 
 ![Screenshot](instances/screenshot.png)
+
+### Indirect
+
+Shows how to setup and use indirect draws.
+
+![Screenshot](indirect/screenshot.png)
 
 ## Building
 
