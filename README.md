@@ -11,17 +11,23 @@ They're meant to be simple and straightforward to understand.
 
 ## Examples available
 
-### Cube
+### Triangle
 
-Draws a 3D textured cube.
+Very basic example of the GPU's capabilities.
 
-![Screenshot](cube/screenshot.png)
+![Screenshot](triangle/screenshot.png)
 
 ### Primitives
 
 Shows the unique primitive types available in the PS4 hardware.
 
 ![Screenshot](primitives/screenshot.png)
+
+### Cube
+
+Draws a 3D textured cube.
+
+![Screenshot](cube/screenshot.png)
 
 ### GLTF
 
