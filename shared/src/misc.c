@@ -79,10 +79,9 @@ bool initdepthtarget(
 
 	const GnmDataFormat depthfmt = gnmDfInitFromZ(zfmt);
 	const uint32_t depthbpp = gnmDfGetBitsPerElement(depthfmt);
-	const uint32_t numfragsperpixel = 1 << numfrags;
 	GpaSurfaceProperties surfprops = {0};
 	GpaError err = gpaFindOptimalSurface(
-		&surfprops, depthsurftype, depthbpp, numfragsperpixel, false, mingpumode
+		&surfprops, depthsurftype, depthbpp, numfrags, false, mingpumode
 	);
 	if (err != GPA_ERR_OK) {
 		printf("Failed to compute depth tile mode with %s\n", gpaStrError(err));
