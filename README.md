@@ -1,8 +1,8 @@
 # Example freegnm programs
 
-This repository holds programs to show how to use [freegnm](https://gitgud.io/gluesniffer/freegnm), a GPU library for the PlayStation 4, and [psbc](https://gitgud.io/gluesniffer/psbc), a shader binary compiler also for the PlayStation 4.
+This repository holds programs to show how to use [freegnm](https://gitgud.io/gluesniffer/freegnm): a GPU library for the PlayStation 4, and [psbc](https://gitgud.io/gluesniffer/psbc): a shader binary compiler also for the PlayStation 4.
 
-They're meant to be simple and straightforward to understand.
+They're meant to be simple and small.
 
 **NOTES:**
 
