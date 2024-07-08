@@ -52,7 +52,7 @@ LDFLAGS=-lc -lkernel -lSceGnmDriver -lSceVideoOut -lgnm
 
 # Asset and module directories.
 ASSETS=\
-	assets/images/templeicon32.gnf \
+	assets/images/friends.gnf \
 	$(VERT_PSBS) \
 	$(FRAG_PSBS)
 LIBMODULES=$(wildcard sce_module/*)

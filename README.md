@@ -85,7 +85,7 @@ The following resources are used:
 
 - Chinese Dragon model by Morgan McGuire
 - Hack typeface by SourceFoundry
-- TempleOS logo by Terry A. Davis
+- Screenshots of Dark Knight Rises film's plane scene
 
 ## License
 
