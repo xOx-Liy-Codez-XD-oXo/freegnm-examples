@@ -371,6 +371,11 @@ int main(void) {
 	while (1) {
 		*label = 9;
 
+		viewrot.x += 0.25;
+		if (viewrot.x >= 360.0) {
+			viewrot.x = 0.0;
+		}
+
 		viewrot.y += 1.0;
 		if (viewrot.y >= 360.0) {
 			viewrot.y = 0.0;
