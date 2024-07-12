@@ -19,9 +19,15 @@ typedef struct {
 	mat4s c_mview;
 	mat4s c_mmodel;
 	vec4s c_viewpos;
-	PointLight c_lights[2];
+	uint32_t c_numlights;
+
+	vec3s pad;
+	vec4s pad2;
+	vec4s pad3;
+
+	PointLight c_lights[4];
 } ConstBuffer;
-_Static_assert(sizeof(ConstBuffer) == 0x110, "");
+_Static_assert(sizeof(ConstBuffer) == 0x180, "");
 
 typedef struct {
 	GnmBuffer constbuf;
@@ -173,6 +179,7 @@ void pass_model_init(
 	);
 	s_mpass.cbufmem->c_mmodel = glms_scale_uni(GLMS_MAT4_IDENTITY, 3.0);
 
+	s_mpass.cbufmem->c_numlights = uasize(s_mpass.cbufmem->c_lights);
 	s_mpass.cbufmem->c_lights[0] = (PointLight){
 		.position = (vec3s){{3.0, 2.0, 4.0}},
 		.falloff = calcsquaredfalloffinv(6.0),
@@ -183,6 +190,18 @@ void pass_model_init(
 		.position = (vec3s){{-3.0, 2.0, 4.0}},
 		.falloff = calcsquaredfalloffinv(6.0),
 		.color = (vec3s){{0.55, 0.0, 0.5}},
+		.colorintensity = 1500.0,
+	};
+	s_mpass.cbufmem->c_lights[2] = (PointLight){
+		.position = (vec3s){{-3.0, 2.0, -4.0}},
+		.falloff = calcsquaredfalloffinv(6.0),
+		.color = (vec3s){{0.1, 0.1, 0.8}},
+		.colorintensity = 1500.0,
+	};
+	s_mpass.cbufmem->c_lights[3] = (PointLight){
+		.position = (vec3s){{3.0, 2.0, -4.0}},
+		.falloff = calcsquaredfalloffinv(6.0),
+		.color = (vec3s){{0.0, 0.8, 0.8}},
 		.colorintensity = 1500.0,
 	};
 }

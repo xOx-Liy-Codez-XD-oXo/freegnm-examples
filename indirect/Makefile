@@ -54,6 +54,7 @@ CFLAGS=-std=c11 -Wall -Wextra -Wpedantic -DCGLM_ALL_UNALIGNED \
 	-DCGLM_FORCE_LEFT_HANDED -DCGLM_FORCE_DEPTH_ZERO_TO_ONE \
 	-D_XOPEN_SOURCE=500 -I$(SHARED_PATH)/src
 LDFLAGS=-lc -lkernel -lSceGnmDriver -lSceVideoOut -lgnm
+GLSLCFLAGS=
 
 # Asset and module directories.
 ASSETS=\
@@ -77,9 +78,9 @@ $(EXE): $(OBJS)
 
 # GLSL shader compiler
 %.vert.spv: %.vert.glsl
-	$(GLSLC) -fshader-stage=vertex $< -o $@
+	$(GLSLC) -fshader-stage=vertex $(GLSLCFLAGS) $< -o $@
 %.frag.spv: %.frag.glsl
-	$(GLSLC) -fshader-stage=fragment $< -o $@
+	$(GLSLC) -fshader-stage=fragment $(GLSLCFLAGS) $< -o $@
 # PSB/GCN shader compiler
 %.vert.sb: %.vert.spv
 	$(PSBC) -s vertex -f $< -o $@

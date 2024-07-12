@@ -1,12 +1,13 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_scalar_block_layout : enable
 
-layout(set = 0, binding = 0) uniform Constants {
+layout(set = 0, binding = 0, std430) uniform Constants {
 	mat4 mproj;
 	mat4 mview;
 	mat4 mmodel;
 	vec4 viewpos;
-	// PointLight lights[2]; // not needed here
+	// other fields aren't needed
 } c;
 
 layout(location = 0) in vec3 inpos;
