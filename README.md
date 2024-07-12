@@ -87,6 +87,8 @@ The following resources are used:
 - Hack typeface by SourceFoundry
 - Screenshots of Dark Knight Rises film's plane scene
 
+The libraries and resources are owned by their respective owners and are not covered by this project's license.
+
 ## License
 
-This project is licensed under the MIT license, see [COPYING](COPYING) for more information.
+This project is released under Public Domain, see [UNLICENSE](UNLICENSE) for more information.
