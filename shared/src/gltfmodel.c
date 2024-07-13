@@ -109,9 +109,18 @@ static void LoadPrimitiveMaterials(
 			return;
 		}
 
+		void* bufdata = baseColorImage->buffer_view->data;
+		if (!bufdata) {
+			bufdata = (uint8_t*)baseColorImage->buffer_view->buffer->data +
+				baseColorImage->buffer_view->offset;
+		}
+		if (!bufdata) {
+			fatalf("[gltf] Failed to find albedo image data for %s", baseColorImage->name);
+		}
+
 		if (!loadlineartexturemem(
 				garlicmem, &outMesh->material.albedo,
-				baseColorImage->buffer_view->data,
+				bufdata,
 				baseColorImage->buffer_view->size
 			)) {
 			fatalf(
