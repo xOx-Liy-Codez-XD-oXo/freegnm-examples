@@ -449,7 +449,7 @@ static bool GltfModel_LoadNodeMesh(
 
 			if (preTransform) {
 				vert.Position = glms_vec3(
-					glms_mat4_mulv(localMatrix, glms_vec4(vert.Position, 0.0f))
+					glms_mat4_mulv(localMatrix, glms_vec4(vert.Position, 1.0))
 				);
 				vert.Normal = glms_normalize(
 					glms_mat3_mulv(glms_mat4_pick3(localMatrix), vert.Normal)
@@ -457,8 +457,8 @@ static bool GltfModel_LoadNodeMesh(
 			}
 
 			if (flipY) {
-				vert.Position.y *= -1.0f;
-				vert.Normal.y *= -1.0f;
+				vert.Position.y *= -1.0;
+				vert.Normal.y *= -1.0;
 			}
 
 			uvappend(&Vertices, &vert);
