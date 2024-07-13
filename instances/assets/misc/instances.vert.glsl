@@ -1,12 +1,15 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
+#extension GL_EXT_scalar_block_layout : enable
 
-layout(set = 0, binding = 0) uniform Constants {
+layout(set = 0, binding = 0, std430) uniform Constants {
 	mat4 mproj;
 	mat4 mview;
 	mat4 mmodel;
-	vec4 viewpos;
-	// PointLight lights[2]; // not needed here
+	vec3 viewpos;
+	// not needed here
+	// uint numlights;
+	// PointLight lights[2];
 } c;
 
 layout(location = 0) in vec3 inpos;
@@ -25,7 +28,7 @@ out gl_PerVertex {
 };
 
 void main() {
-	const vec4 worldpos = c.mmodel * vec4(inpos + inposoffset, 1.0);
+	const vec4 worldpos = c.mmodel * vec4(inpos, 1.0) + vec4(inposoffset, 1.0);
 
 	gl_Position = c.mproj * c.mview * worldpos;
 	outnorm = mat3(c.mmodel) * innorm;

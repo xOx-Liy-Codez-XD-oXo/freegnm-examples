@@ -58,7 +58,7 @@ LDFLAGS=-lc -lkernel -lSceGnmDriver -lSceVideoOut -lgnm
 # Asset and module directories.
 ASSETS=\
 	assets/fonts/Hack-Regular.ttf \
-	assets/misc/sphere.gltf \
+	assets/misc/fruit_of_knowledge.gltf \
 	$(VERT_PSBS) \
 	$(FRAG_PSBS)
 LIBMODULES=$(wildcard sce_module/*)

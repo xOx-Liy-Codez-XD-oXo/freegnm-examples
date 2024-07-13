@@ -12,16 +12,25 @@ static inline float calcsquaredfalloffinv(const float falloff) {
 	return sqr > 0.0 ? (1 / sqr) : 0;
 }
 
-static const uint32_t NUM_INSTANCES = 5;
+// from https://easings.net
+static inline float easeinout(float x) {
+	return -(cosf(M_PI * x) - 1) / 2;
+}
+
+static const uint32_t NUM_INSTANCES = 6;
+static const float GAP_INSTANCES = 4.0;
+static const float Y_MOVING_DIST = 4.0;
 
 typedef struct {
 	mat4s c_mproj;
 	mat4s c_mview;
 	mat4s c_mmodel;
-	vec4s c_viewpos;
-	PointLight c_lights[2];
+	vec3s c_viewpos;
+	uint32_t c_numlights;
+
+	PointLight c_lights[3];
 } ConstBuffer;
-_Static_assert(sizeof(ConstBuffer) == 0x110, "");
+_Static_assert(sizeof(ConstBuffer) == 0x130, "");
 
 typedef struct {
 	GnmBuffer constbuf;
@@ -43,7 +52,6 @@ typedef struct {
 	GnmBuffer constbuf;
 	GnmSampler sampler;
 
-	GnmBuffer* vertbufs;
 	vec3s* instmem;
 	GnmBuffer instbuf;
 
@@ -54,14 +62,17 @@ typedef struct {
 
 	uint32_t viewwidth;
 	uint32_t viewheight;
+	float curtime;
 } PassModel;
 static PassModel s_mpass = {0};
 
 void pass_model_init(
 	MemoryAllocator* glrmem, uint32_t screenwidth, uint32_t screenheight
 ) {
-	s_mpass.viewwidth = screenwidth;
-	s_mpass.viewheight = screenheight;
+	s_mpass = (PassModel){
+		.viewwidth = screenwidth,
+		.viewheight = screenheight,
+	};
 
 	// load shaders
 	if (!loadvshader(
@@ -104,18 +115,10 @@ void pass_model_init(
 	s_mpass.instbuf = gnmCreateVertexBuffer(
 		s_mpass.instmem, GNM_FMT_R32G32B32_FLOAT, sizeof(vec3s), NUM_INSTANCES
 	);
-	for (uint32_t i = 0; i < NUM_INSTANCES; i += 1) {
-		s_mpass.instmem[i] = (vec3s){{-5.0 + 2.5 * i, 0.0, 0.0}};
-	}
 
-	// HACK: create new vertex buffer as the one allocated in gltfmodel.c is not
-	// good enough.
-	// TODO: this sucks, improve it
-	s_mpass.vertbufs = memalloc_alloc(
-		glrmem, sizeof(GnmBuffer) * 5, GNM_ALIGNMENT_BUFFER_BYTES
-	);
-	if (!s_mpass.vertbufs) {
-		fatal("Failed to allocate vertex buffer");
+	const float xstart = -((NUM_INSTANCES * GAP_INSTANCES) / 2);
+	for (uint32_t i = 0; i < NUM_INSTANCES; i += 1) {
+		s_mpass.instmem[i] = (vec3s){{xstart + GAP_INSTANCES * i, 0.0, 0.0}};
 	}
 
 	// prepare fetch shader
@@ -171,23 +174,42 @@ void pass_model_init(
 		glm_rad(90.0), (float)s_mpass.viewwidth / (float)s_mpass.viewheight,
 		0.1, 100.0
 	);
-	s_mpass.cbufmem->c_mmodel = GLMS_MAT4_IDENTITY;
 
+	// 99.0 scale should be enough to make the apple 2m tall
+	const float scaleval = 297.0;
+	s_mpass.cbufmem->c_mmodel = glms_scale(
+		GLMS_MAT4_IDENTITY,
+		(vec3s){
+			.x = scaleval,
+			.y = scaleval,
+			.z = scaleval,
+		}
+	);
+
+	s_mpass.cbufmem->c_numlights = uasize(s_mpass.cbufmem->c_lights);
 	s_mpass.cbufmem->c_lights[0] = (PointLight){
-		.position = (vec3s){{2.0, 2.0, 0.0}},
-		.falloff = calcsquaredfalloffinv(2.5),
+		.position = (vec3s){{-6.0, 2.0, 0.0}},
+		.falloff = calcsquaredfalloffinv(15.0),
 		.color = (vec3s){{0.0, 0.85, 0.0}},
 		.colorintensity = 1500.0,
 	};
 	s_mpass.cbufmem->c_lights[1] = (PointLight){
-		.position = (vec3s){{2.0, 2.0, 4.0}},
-		.falloff = calcsquaredfalloffinv(5.0),
+		.position = (vec3s){{6.0, 2.0, 4.0}},
+		.falloff = calcsquaredfalloffinv(10.0),
 		.color = (vec3s){{0.55, 0.0, 0.5}},
+		.colorintensity = 1500.0,
+	};
+	s_mpass.cbufmem->c_lights[2] = (PointLight){
+		.position = (vec3s){{0.0, 2.0, -12.0}},
+		.falloff = calcsquaredfalloffinv(16.0),
+		.color = (vec3s){{0.1, 0.1, 0.9}},
 		.colorintensity = 1500.0,
 	};
 }
 
-void pass_model_update(void) {
+void pass_model_update(float frametime) {
+	s_mpass.curtime += frametime;
+
 	vec3s translation = s_mpass.location;
 	translation.y *= -1.0;
 	const mat4s tranm = glms_translate(GLMS_MAT4_IDENTITY, translation);
@@ -210,12 +232,23 @@ void pass_model_update(void) {
 	const mat4s matview = glms_mat4_mul(tranm, rotm);
 
 	s_mpass.cbufmem->c_mview = matview;
-	s_mpass.cbufmem->c_viewpos = glms_mat4_inv(matview).col[3];
+	s_mpass.cbufmem->c_viewpos = glms_vec3(glms_mat4_inv(matview).col[3]);
+
+	const float progress = easeinout(s_mpass.curtime);
+
+	// move instances on the Y axis (up and down),
+	// odd instances go down,
+	// even instances go up
+	for (uint32_t i = 0; i < NUM_INSTANCES; i += 1) {
+		const bool even = i % 2 == 0;
+		s_mpass.instmem[i].y =
+			(even ? Y_MOVING_DIST : -Y_MOVING_DIST) * progress;
+	}
 }
 
 void pass_model_render(
-	GnmCommandBuffer* cmd, gltfModel* model, GnmRenderTarget* rt,
-	GnmDepthRenderTarget* drt
+	MemoryAllocator* glrmem, GnmCommandBuffer* cmd, gltfModel* model,
+	GnmRenderTarget* rt, GnmDepthRenderTarget* drt
 ) {
 	const GnmPrimitiveSetup primsetup = {
 		.cullmode = GNM_CULL_NONE,
@@ -267,26 +300,39 @@ void pass_model_render(
 	// set instance count
 	gnmDrawCmdSetNumInstances(cmd, NUM_INSTANCES);
 
+	// create vertex buffer pointers for each model's mesh,
+	// this is needed because they need an extra pointer for the instance buffer
+	// TODO: this sucks, improve it
+	const size_t numvbufs = 5;
+	const size_t vbarraylen =
+		sizeof(GnmBuffer) * numvbufs * model->PrimMeshes.numelements;
+	GnmBuffer* vertbufs =
+		memalloc_alloc(glrmem, vbarraylen, GNM_ALIGNMENT_BUFFER_BYTES);
+	if (!vertbufs) {
+		fatal("Failed to allocate vertex buffer");
+	}
+
 	// draw meshes
 	gnmDrawCmdSetPrimitiveType(cmd, GNM_PT_TRILIST);
 	gnmDrawCmdSetIndexSize(cmd, GNM_INDEX_32, GNM_POLICY_LRU);
 	for (size_t i = 0; i < uvlen(&model->PrimMeshes); i += 1) {
 		R_Mesh* curmesh = uvdata(&model->PrimMeshes, i);
 
-		// HACK: update vertex buffers used
-		// these buffer descriptors must be visible to the GPU.
+		GnmBuffer* curvbufs = &vertbufs[i * numvbufs];
+
+		// set vertex buffers to be exposed to the shader
 		// buffer 0 is position
 		// buffer 1 is normal
 		// buffer 2 is UV
 		// buffer 3 are metallic and roughness
 		// buffer 4 is INSTANCED position offset
-		s_mpass.vertbufs[0] = curmesh->vertbufs[0];
-		s_mpass.vertbufs[1] = curmesh->vertbufs[1];
-		s_mpass.vertbufs[2] = curmesh->vertbufs[2];
-		s_mpass.vertbufs[3] = curmesh->vertbufs[3];
-		s_mpass.vertbufs[4] = s_mpass.instbuf;
+		curvbufs[0] = curmesh->vertbufs[0];
+		curvbufs[1] = curmesh->vertbufs[1];
+		curvbufs[2] = curmesh->vertbufs[2];
+		curvbufs[3] = curmesh->vertbufs[3];
+		curvbufs[4] = s_mpass.instbuf;
 
-		gnmDrawCmdSetPointerUserData(cmd, GNM_STAGE_VS, 2, s_mpass.vertbufs);
+		gnmDrawCmdSetPointerUserData(cmd, GNM_STAGE_VS, 2, curvbufs);
 
 		// create and apply descriptor set in vertex shader
 		VsDescSet* vsdescset = gnmCmdAllocInside(cmd, sizeof(VsDescSet), 4);

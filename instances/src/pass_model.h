@@ -19,10 +19,10 @@ _Static_assert(sizeof(PointLight) == 0x20, "");
 void pass_model_init(
 	MemoryAllocator* glrmem, uint32_t screenwidth, uint32_t screenheight
 );
-void pass_model_update(void);
+void pass_model_update(float frametime);
 void pass_model_render(
-	GnmCommandBuffer* cmd, gltfModel* model, GnmRenderTarget* rt,
-	GnmDepthRenderTarget* drt
+	MemoryAllocator* glrmem, GnmCommandBuffer* cmd, gltfModel* model,
+	GnmRenderTarget* rt, GnmDepthRenderTarget* drt
 );
 
 vec3s pass_model_getloc(void);

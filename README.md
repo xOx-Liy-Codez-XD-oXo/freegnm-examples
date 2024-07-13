@@ -39,7 +39,7 @@ Renders a GLTF's model with some basic PBR parameters.
 
 Example of instanced draw calls usage.
 
-![Screenshot](instances/screenshot.png)
+![Screenshot](instances/screenshot.jpg)
 
 ### Indirect
 

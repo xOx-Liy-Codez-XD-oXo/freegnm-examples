@@ -14,8 +14,9 @@ layout(set = 0, binding = 12) uniform Constants {
 	mat4 mproj;
 	mat4 mview;
 	mat4 mmodel;
-	vec4 viewpos;
-	PointLight lights[2];
+	vec3 viewpos;
+	uint numlights;
+	PointLight lights[3];
 } c;
 
 layout(set = 0, binding = 0) uniform sampler2D tex;
@@ -141,7 +142,7 @@ vec3 LinearToRgb(const vec3 linearColor, const float gamma)
 void main() {
 	vec3 albedo = texture(tex, inuv).xyz;
 
-	vec3 V = normalize(c.viewpos.xyz - inposview);
+	vec3 V = normalize(c.viewpos - inposview);
 	vec3 N = normalize(innorm);
 
 	float metallic = inmetallic_roughness.x;
@@ -151,19 +152,13 @@ void main() {
 
 	// specular + diffuse BRDF
 	vec3 Lo = vec3(0.0);
-	/*for (uint i = 0; i < c.numlights; i += 1)
+	for (uint i = 0; i < c.numlights; i += 1)
 	{
 		Lo += BRDF(
 			V, N, inposview, albedo, F0, metallic,
 			roughness, c.lights[i] 
 		);
-	};*/
-	Lo += BRDF(
-		V, N, inposview, albedo, F0, metallic, roughness, c.lights[0] 
-	);
-	Lo += BRDF(
-		V, N, inposview, albedo, F0, metallic, roughness, c.lights[1] 
-	);
+	};
 
 	// diffuse
 	vec3 ambient = albedo * 0.02;

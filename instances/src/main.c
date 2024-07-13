@@ -99,7 +99,7 @@ int main(void) {
 		fatal("Failed to set video render target");
 	}
 
-	const char* modelpath = "/app0/assets/misc/sphere.gltf";
+	const char* modelpath = "/app0/assets/misc/fruit_of_knowledge.gltf";
 	gltfModel model = {0};
 	if (!LoadGltfModel(&model, modelpath, &garlicmem, true, false)) {
 		fatal("Failed to load GLTF model");
@@ -140,12 +140,12 @@ int main(void) {
 		gnmCmdReset(&cmdbuf);
 		*label = 9;
 
-		pass_model_update();
+		pass_model_update(frametime);
 
 		clock_gettime(CLOCK_MONOTONIC, &timestart);
 
 		// clear color and depth right away, since they set some controls
-		const float clearcolor[4] = {0.9, 0.9, 0.9, 1.0};
+		const float clearcolor[4] = {1.0, 1.0, 1.0, 1.0};
 		clearcolortarget(&cmdbuf, &fbtarget, clearcolor);
 		cleardepthtarget(&cmdbuf, &depthtarget, 1.0);
 
@@ -165,7 +165,7 @@ int main(void) {
 		);
 
 		// model pass
-		pass_model_render(&cmdbuf, &model, &fbtarget, &depthtarget);
+		pass_model_render(&garlicmem, &cmdbuf, &model, &fbtarget, &depthtarget);
 
 		// ui pass
 		const vec3s loc = pass_model_getloc();
