@@ -1,6 +1,6 @@
 # Example freegnm programs
 
-This repository holds programs to show how to use [freegnm](https://gitgud.io/gluesniffer/freegnm): a GPU library for the PlayStation 4, and [psbc](https://gitgud.io/gluesniffer/psbc): a shader binary compiler also for the PlayStation 4.
+This repository holds programs to show how to use [freegnm](https://gitgud.io/veiledmerc/freegnm): a GPU library for the PlayStation 4, and [psbc](https://gitgud.io/veiledmerc/psbc): a shader binary compiler also for the PlayStation 4.
 
 These samples are meant to be as simple and straightforward as possible.
 
@@ -56,7 +56,7 @@ You need the following tools to build the projects:
 - GNU Make
 - LLD linker
 - [OpenOrbis Toolchain](https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain)
-- [psbc](https://gitgud.io/gluesniffer/psbc)
+- [psbc](https://gitgud.io/veiledmerc/psbc)
 
 Then go to one of the example's directory, and run
 
@@ -75,16 +75,15 @@ Some PBR algorithms are taken from [Moving Frostbite to Physically Based Renderi
 
 The following libraries are used:
 
-- cglm
-- cgltf
-- Nuklear
-- stb_image
-- stb_truetype
+- [cglm](https://github.com/recp/cglm), MIT license
+- [cgltf](https://github.com/jkuhlmann/cgltf), MIT license
+- [Nuklear](https://immediate-mode-ui.github.io/Nuklear), Public Domain or MIT license
+- [stb_image and stb_truetype](https://github.com/nothings/stb), Public Domain or MIT license
 
 The following resources are used:
 
-- Chinese Dragon model by Morgan McGuire
-- Hack typeface by SourceFoundry
+- [Stanford dragon](https://graphics.stanford.edu/data/3Dscanrep) by Stanford Computer Graphics Laboratory, non-commercial use only
+- [Hack typeface](https://sourcefoundry.org/hack) by SourceFoundry, MIT license
 - Screenshots of Dark Knight Rises film's plane scene
 
 The libraries and resources are owned by their respective owners and are not covered by this project's license.
