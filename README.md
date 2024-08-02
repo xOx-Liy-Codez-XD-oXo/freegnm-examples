@@ -90,4 +90,4 @@ The libraries and resources are owned by their respective owners and are not cov
 
 ## License
 
-This project is released under Public Domain, see [UNLICENSE](UNLICENSE) for more information.
+This project is released to the public domain, see [UNLICENSE](UNLICENSE) for more information.
