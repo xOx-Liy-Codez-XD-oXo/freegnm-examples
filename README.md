@@ -6,7 +6,6 @@ These samples are meant to be as simple and straightforward as possible.
 
 **NOTES:**
 
-- There's a bug/glitch where the framebuffer doesn't display some of the pixels at the top correctly. It might be memory related.
 - None of these examples were tested on a Pro/NEO PS4 and may not work there.
 
 ## Examples available

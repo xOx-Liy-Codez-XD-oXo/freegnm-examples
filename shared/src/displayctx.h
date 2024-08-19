@@ -13,8 +13,10 @@ typedef struct {
 } DisplayContext;
 
 bool displayctx_init(DisplayContext* ctx);
-bool displayctx_setrt(DisplayContext* ctx, GnmRenderTarget* rt);
-bool displayctx_flip(DisplayContext* ctx);
+bool displayctx_setrts(
+	DisplayContext* ctx, GnmRenderTarget* rts, unsigned numrts
+);
+bool displayctx_flip(DisplayContext* ctx, unsigned bufidx);
 void displayctx_destroy(DisplayContext* ctx);
 
 #endif	// _DISPLAYCTX_H_

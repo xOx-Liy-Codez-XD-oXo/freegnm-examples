@@ -34,6 +34,7 @@ int main(void) {
 	printf("Display resolution: %ux%u\n", display.screenw, display.screenh);
 
 	// create color render target
+	// only one is needed since this program flips a frame only once
 	GnmRenderTarget fbtarget = {0};
 	if (!initcolortarget(
 			&fbtarget, &garlicmem, display.screenw, display.screenh,
@@ -42,7 +43,7 @@ int main(void) {
 		fatal("Failed to init color render target");
 	}
 
-	if (!displayctx_setrt(&display, &fbtarget)) {
+	if (!displayctx_setrts(&display, &fbtarget, 1)) {
 		fatal("Failed to init video");
 	}
 
@@ -138,7 +139,7 @@ int main(void) {
 			continue;
 		}
 
-		if (!displayctx_flip(&display)) {
+		if (!displayctx_flip(&display, 0)) {
 			puts("displayflip failed");
 			break;
 		}

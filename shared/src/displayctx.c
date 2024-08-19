@@ -35,27 +35,37 @@ bool displayctx_init(DisplayContext* ctx) {
 	return true;
 }
 
-bool displayctx_setrt(DisplayContext* ctx, GnmRenderTarget* rt) {
-	OrbisVideoOutBufferAttribute attr = {0};
-	sceVideoOutSetBufferAttribute(
-		&attr, ORBIS_VIDEO_OUT_PIXEL_FORMAT_A8B8G8R8_SRGB,
-		ORBIS_VIDEO_OUT_TILING_MODE_TILE, ORBIS_VIDEO_OUT_ASPECT_RATIO_16_9,
-		rt->size.width, rt->size.height, gnmRtGetPitch(rt)
-	);
-
-	void* rtaddr = gnmRtGetBaseAddr(rt);
-	int res = sceVideoOutRegisterBuffers(ctx->videohandle, 0, &rtaddr, 1, &attr);
-	if (res != 0) {
-		printf("display: RegisterBuffers failed with 0x%x\n", res);
+bool displayctx_setrts(
+	DisplayContext* ctx, GnmRenderTarget* rts, unsigned numrts
+) {
+	if (!ctx || !rts || !numrts) {
 		return false;
+	}
+
+	for (unsigned i = 0; i < numrts; i += 1) {
+		GnmRenderTarget* rt = &rts[i];
+		OrbisVideoOutBufferAttribute attr = {0};
+		sceVideoOutSetBufferAttribute(
+			&attr, ORBIS_VIDEO_OUT_PIXEL_FORMAT_A8B8G8R8_SRGB,
+			ORBIS_VIDEO_OUT_TILING_MODE_TILE, ORBIS_VIDEO_OUT_ASPECT_RATIO_16_9,
+			rt->size.width, rt->size.height, gnmRtGetPitch(rt)
+		);
+
+		void* rtaddr = gnmRtGetBaseAddr(rt);
+		int res =
+			sceVideoOutRegisterBuffers(ctx->videohandle, i, &rtaddr, 1, &attr);
+		if (res < 0) {
+			printf("display: RegisterBuffers failed with 0x%x\n", res);
+			return false;
+		}
 	}
 
 	return true;
 }
 
-bool displayctx_flip(DisplayContext* ctx) {
+bool displayctx_flip(DisplayContext* ctx, unsigned bufidx) {
 	int res = sceVideoOutSubmitFlip(
-		ctx->videohandle, 0, ORBIS_VIDEO_OUT_FLIP_VSYNC, 0
+		ctx->videohandle, bufidx, ORBIS_VIDEO_OUT_FLIP_VSYNC, 0
 	);
 	if (res != 0) {
 		printf("display: SubmitFlip failed with 0x%x\n", res);

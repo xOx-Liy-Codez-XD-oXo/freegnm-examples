@@ -77,13 +77,15 @@ int main(void) {
 	pass_model_init(&garlicmem, display.screenw, display.screenh);
 	pass_ui_init(display.screenw, display.screenh, &garlicmem);
 
-	// create color render target
-	GnmRenderTarget fbtarget = {0};
-	if (!initcolortarget(
-			&fbtarget, &garlicmem, display.screenw, display.screenh,
-			GNM_FMT_R8G8B8A8_SRGB, gnmGpuMode()
-		)) {
-		fatal("Failed to init color render target");
+	// create 2 color render targets for double frame buffering
+	GnmRenderTarget fbtargets[2] = {0};
+	for (unsigned i = 0; i < uasize(fbtargets); i += 1) {
+		if (!initcolortarget(
+				&fbtargets[i], &garlicmem, display.screenw, display.screenh,
+				GNM_FMT_R8G8B8A8_SRGB, gnmGpuMode()
+			)) {
+			fatalf("Failed to init color render target %u", i);
+		}
 	}
 
 	// create depth render target
@@ -95,7 +97,7 @@ int main(void) {
 		fatal("Failed to init depth render target");
 	}
 
-	if (!displayctx_setrt(&display, &fbtarget)) {
+	if (!displayctx_setrts(&display, fbtargets, uasize(fbtargets))) {
 		fatal("Failed to set video render target");
 	}
 
@@ -132,13 +134,18 @@ int main(void) {
 		totalindices += m->numindices;
 	}
 
+	unsigned curfb = 0;
+	float frametime = 0.0;
 	struct timespec timestart = {0};
 	struct timespec timeend = {0};
-	float frametime = 0.0;
 
 	while (1) {
 		gnmCmdReset(&cmdbuf);
 		*label = 9;
+
+		gnmDrawCmdWaitUntilSafeForRendering(
+			&cmdbuf, display.videohandle, curfb
+		);
 
 		pass_model_update();
 
@@ -146,7 +153,7 @@ int main(void) {
 
 		// clear color and depth right away, since they set some controls
 		const float clearcolor[4] = {0.9, 0.9, 0.9, 1.0};
-		clearcolortarget(&cmdbuf, &fbtarget, clearcolor);
+		clearcolortarget(&cmdbuf, &fbtargets[curfb], clearcolor);
 		cleardepthtarget(&cmdbuf, &depthtarget, 1.0);
 
 		// wait for clears to write
@@ -165,7 +172,7 @@ int main(void) {
 		);
 
 		// model pass
-		pass_model_render(&cmdbuf, &model, &fbtarget, &depthtarget);
+		pass_model_render(&cmdbuf, &model, &fbtargets[curfb], &depthtarget);
 
 		// ui pass
 		const vec3s loc = pass_model_getloc();
@@ -194,7 +201,7 @@ int main(void) {
 		);
 		cury += 20.0;
 
-		pass_ui_end(&cmdbuf, &fbtarget);
+		pass_ui_end(&cmdbuf, &fbtargets[curfb]);
 
 		gnmDrawCmdEventWriteEop(
 			&cmdbuf, GNM_CACHE_FLUSH_TS, (uint64_t)label,
@@ -217,7 +224,7 @@ int main(void) {
 					((float)timediff.tv_nsec / (1000.0 * 1000.0 * 1000.0)
 					);	// nano to seconds
 
-		if (!displayctx_flip(&display)) {
+		if (!displayctx_flip(&display, curfb)) {
 			puts("displayflip failed");
 			break;
 		}
@@ -228,7 +235,10 @@ int main(void) {
 			break;
 		}
 
-		gnmDrawCmdWaitUntilSafeForRendering(&cmdbuf, display.videohandle, 0);
+		curfb += 1;
+		if (curfb >= uasize(fbtargets)) {
+			curfb = 0;
+		}
 	}
 
 	displayctx_destroy(&display);

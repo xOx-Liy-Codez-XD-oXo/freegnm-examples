@@ -107,13 +107,15 @@ int main(void) {
 
 	printf("Display resolution: %ux%u\n", display.screenw, display.screenh);
 
-	// create color render target
-	GnmRenderTarget fbtarget = {0};
-	if (!initcolortarget(
-			&fbtarget, &garlicmem, display.screenw, display.screenh,
-			GNM_FMT_R8G8B8A8_SRGB, gnmGpuMode()
-		)) {
-		fatal("Failed to init color render target");
+	// create 2 color render targets for double frame buffering
+	GnmRenderTarget fbtargets[2] = {0};
+	for (unsigned i = 0; i < uasize(fbtargets); i += 1) {
+		if (!initcolortarget(
+				&fbtargets[i], &garlicmem, display.screenw, display.screenh,
+				GNM_FMT_R8G8B8A8_SRGB, gnmGpuMode()
+			)) {
+			fatalf("Failed to init color render target %u", i);
+		}
 	}
 
 	// create depth render target
@@ -125,7 +127,7 @@ int main(void) {
 		fatal("Failed to init depth render target");
 	}
 
-	if (!displayctx_setrt(&display, &fbtarget)) {
+	if (!displayctx_setrts(&display, fbtargets, uasize(fbtargets))) {
 		fatal("Failed to init video");
 	}
 
@@ -138,62 +140,6 @@ int main(void) {
 	}
 
 	GnmCommandBuffer cmdbuf = gnmCmdInit(cmdmem, cmdmemsize, NULL, NULL);
-
-	// clear both render targets right away, since clearing sets some controls
-	const float clearcolor[4] = {1.0, 1.0, 1.0, 1.0};
-	clearcolortarget(&cmdbuf, &fbtarget, clearcolor);
-	cleardepthtarget(&cmdbuf, &depthtarget, 1.0);
-
-	// wait for clears to write
-	gnmDrawCmdWaitGraphicsWrite(
-		&cmdbuf, GNM_ACQUIRE_TARGET_CB0 | GNM_ACQUIRE_TARGET_DB
-	);
-
-	const GnmPrimitiveSetup primsetup = {
-		.cullmode = GNM_CULL_NONE,
-		.frontface = GNM_FACE_CCW,
-		.frontmode = GNM_FILL_SOLID,
-		.backmode = GNM_FILL_SOLID,
-		.frontoffsetmode = false,
-		.backoffsetmode = false,
-		.vertexwindowoffsetenable = false,
-		.provokemode = GNM_PROVOKINGVTX_FIRST,
-		.perspectivecorrectiondisable = false,
-	};
-	gnmDrawCmdSetPrimitiveSetup(&cmdbuf, &primsetup);
-
-	gnmDrawCmdSetRenderTarget(&cmdbuf, 0, &fbtarget);
-	gnmDrawCmdSetRenderTargetMask(&cmdbuf, 0xf);
-	gnmDrawCmdSetDepthRenderTarget(&cmdbuf, &depthtarget);
-
-	// setup controls
-	const GnmDbRenderControl dbrenderctrl = {
-		.depthclearenable = false,
-		.stencilclearenable = false,
-		.htileresummarizeenable = false,
-		.depthwritebackpol = false,
-		.stencilwritebackpol = false,
-		.forcedepthdecompress = false,
-		.copycentroidenable = false,
-		.copysampleindex = 0,
-		.copydepthtocolorenable = false,
-		.copystenciltocolorenable = false,
-	};
-	const GnmDepthStencilControl depthstencilctrl = {
-		.zwrite = true,
-		.zfunc = GNM_DEPTH_COMPARE_LESSEQUAL,
-		.stencilfunc = GNM_DEPTH_COMPARE_NEVER,
-		.stencilbackfunc = GNM_DEPTH_COMPARE_NEVER,
-		.separatestencilenable = false,
-		.depthenable = true,
-		.stencilenable = false,
-		.depthboundsenable = false,
-	};
-	gnmDrawCmdSetDbRenderControl(&cmdbuf, &dbrenderctrl);
-	gnmDrawCmdSetDepthStencilControl(&cmdbuf, &depthstencilctrl);
-
-	// setup viewport
-	setupviewport(&cmdbuf, 0, 0, display.screenw, display.screenh, 0.5f, 0.5f);
 
 	GnmVsShader* vshader = NULL;
 	GnmPsShader* pshader = NULL;
@@ -307,44 +253,12 @@ int main(void) {
 
 	gnmVsRegsSetFetchShaderModifier(&vshader->registers, &fetchres);
 
-	gnmDrawCmdSetVsShader(&cmdbuf, &vshader->registers, 0);
-	gnmDrawCmdSetPsShader(&cmdbuf, &pshader->registers);
-
-	// set fetch shader, vertex buffers and desciprtor set in vertex shader
-	gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_VS, 0, fetchshmem);
-	gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_VS, 2, vertbuffers);
-	gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_VS, 6, vsdescset);
-
-	// set desciprtor set in pixel shader
-	gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_PS, 0, psdescset);
-
-	gnmDrawCmdSetPsInputUsage(
-		&cmdbuf, gnmVsShaderExportSemanticTable(vshader),
-		vshader->numexportsemantics, gnmPsShaderInputSemanticTable(pshader),
-		pshader->numinputsemantics
-	);
-
-	// draw triangle
-	gnmDrawCmdSetPrimitiveType(&cmdbuf, GNM_PT_TRILIST);
-
-	gnmDrawCmdDrawIndexAuto(&cmdbuf, 36);
-
 	// setup sync point
 	uint64_t* label =
 		memalloc_alloc(&garlicmem, sizeof(uint64_t), sizeof(uint64_t));
 	if (!label) {
 		fatal("Failed to allocate sync label");
 	}
-
-	gnmDrawCmdEventWriteEop(
-		&cmdbuf, GNM_CACHE_FLUSH_TS, (uint64_t)label, GNM_DATA_SEL_SEND_DATA64,
-		1
-	);
-
-	void* dcbaddr = cmdbuf.beginptr;
-	uint32_t dcbsize = (cmdbuf.cmdptr - cmdbuf.beginptr) * sizeof(uint32_t);
-	void* ccbaddr = NULL;
-	uint32_t ccbsize = 0;
 
 	const vec3s translation = {
 		.x = 0.0,
@@ -368,14 +282,99 @@ int main(void) {
 		100.0
 	);
 
+	unsigned curfb = 0;
+
 	while (1) {
+		gnmCmdReset(&cmdbuf);
 		*label = 9;
 
+		// clear both render targets right away, since clearing sets some
+		// controls
+		const float clearcolor[4] = {1.0, 1.0, 1.0, 1.0};
+		clearcolortarget(&cmdbuf, &fbtargets[curfb], clearcolor);
+		cleardepthtarget(&cmdbuf, &depthtarget, 1.0);
+
+		const GnmPrimitiveSetup primsetup = {
+			.cullmode = GNM_CULL_NONE,
+			.frontface = GNM_FACE_CCW,
+			.frontmode = GNM_FILL_SOLID,
+			.backmode = GNM_FILL_SOLID,
+			.frontoffsetmode = false,
+			.backoffsetmode = false,
+			.vertexwindowoffsetenable = false,
+			.provokemode = GNM_PROVOKINGVTX_FIRST,
+			.perspectivecorrectiondisable = false,
+		};
+		gnmDrawCmdSetPrimitiveSetup(&cmdbuf, &primsetup);
+
+		gnmDrawCmdSetRenderTarget(&cmdbuf, 0, &fbtargets[curfb]);
+		gnmDrawCmdSetRenderTargetMask(&cmdbuf, 0xf);
+		gnmDrawCmdSetDepthRenderTarget(&cmdbuf, &depthtarget);
+
+		// setup controls
+		const GnmDbRenderControl dbrenderctrl = {
+			.depthclearenable = false,
+			.stencilclearenable = false,
+			.htileresummarizeenable = false,
+			.depthwritebackpol = false,
+			.stencilwritebackpol = false,
+			.forcedepthdecompress = false,
+			.copycentroidenable = false,
+			.copysampleindex = 0,
+			.copydepthtocolorenable = false,
+			.copystenciltocolorenable = false,
+		};
+		const GnmDepthStencilControl depthstencilctrl = {
+			.zwrite = true,
+			.zfunc = GNM_DEPTH_COMPARE_LESSEQUAL,
+			.stencilfunc = GNM_DEPTH_COMPARE_NEVER,
+			.stencilbackfunc = GNM_DEPTH_COMPARE_NEVER,
+			.separatestencilenable = false,
+			.depthenable = true,
+			.stencilenable = false,
+			.depthboundsenable = false,
+		};
+		gnmDrawCmdSetDbRenderControl(&cmdbuf, &dbrenderctrl);
+		gnmDrawCmdSetDepthStencilControl(&cmdbuf, &depthstencilctrl);
+
+		// setup viewport
+		setupviewport(
+			&cmdbuf, 0, 0, display.screenw, display.screenh, 0.5f, 0.5f
+		);
+
+		gnmDrawCmdSetVsShader(&cmdbuf, &vshader->registers, 0);
+		gnmDrawCmdSetPsShader(&cmdbuf, &pshader->registers);
+
+		// set fetch shader, vertex buffers and desciprtor set in vertex shader
+		gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_VS, 0, fetchshmem);
+		gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_VS, 2, vertbuffers);
+		gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_VS, 6, vsdescset);
+
+		// set desciprtor set in pixel shader
+		gnmDrawCmdSetPointerUserData(&cmdbuf, GNM_STAGE_PS, 0, psdescset);
+
+		gnmDrawCmdSetPsInputUsage(
+			&cmdbuf, gnmVsShaderExportSemanticTable(vshader),
+			vshader->numexportsemantics, gnmPsShaderInputSemanticTable(pshader),
+			pshader->numinputsemantics
+		);
+
+		// draw triangle
+		gnmDrawCmdSetPrimitiveType(&cmdbuf, GNM_PT_TRILIST);
+
+		gnmDrawCmdDrawIndexAuto(&cmdbuf, 36);
+
+		// write label when all commands are done
+		gnmDrawCmdEventWriteEop(
+			&cmdbuf, GNM_CACHE_FLUSH_TS, (uint64_t)label,
+			GNM_DATA_SEL_SEND_DATA64, 1
+		);
+
+		// rotate cube
 		viewrot.x += 0.25;
 		if (viewrot.x >= 360.0) {
 			viewrot.x = 0.0;
 		}
-
 		viewrot.y += 1.0;
 		if (viewrot.y >= 360.0) {
 			viewrot.y = 0.0;
@@ -391,27 +390,37 @@ int main(void) {
 
 		cbufmem->c_mvp = glms_mat4_mul(matproj, matview);
 
-		int res = sceGnmSubmitCommandBuffers(
-			1, &dcbaddr, &dcbsize, &ccbaddr, &ccbsize
-		);
+		// submit command buffer
+		void* dcbaddr = cmdbuf.beginptr;
+		uint32_t dcbsize = (cmdbuf.cmdptr - cmdbuf.beginptr) * sizeof(uint32_t);
+		int res = sceGnmSubmitCommandBuffers(1, &dcbaddr, &dcbsize, NULL, 0);
 		if (res != 0) {
 			printf("sceGnmSubmitCommandBuffers failed with %i\n", res);
 			break;
 		}
 
+		// wait for label to be written by GPU
 		while (*label != 1) {
 			continue;
 		}
 
-		if (!displayctx_flip(&display)) {
+		// flip current framebuffer to display
+		if (!displayctx_flip(&display, curfb)) {
 			puts("displayflip failed");
 			break;
 		}
 
+		// tell system that this frame is done
 		res = sceGnmSubmitDone();
 		if (res != 0) {
 			printf("sceGnmSubmitDone failed with %i\n", res);
 			break;
+		}
+
+		// go to next available framebuffer
+		curfb += 1;
+		if (curfb >= uasize(fbtargets)) {
+			curfb = 0;
 		}
 	}
 

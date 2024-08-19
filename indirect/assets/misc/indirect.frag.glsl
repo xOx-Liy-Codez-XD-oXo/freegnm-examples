@@ -138,13 +138,11 @@ vec3 F_SchlickR(float cosTheta, vec3 F0, float roughness) {
 		* pow(1.0 - cosTheta, 5.0);
 }
 
-vec3 RgbToLinear(const vec3 rgbColor, const float gamma)
-{
+vec3 RgbToLinear(const vec3 rgbColor, const float gamma) {
 	return pow(rgbColor, vec3(gamma));
 }
 
-vec3 LinearToRgb(const vec3 linearColor, const float gamma)
-{
+vec3 LinearToRgb(const vec3 linearColor, const float gamma) {
 	return pow(linearColor, vec3(1.0 / gamma));
 }
 
@@ -168,12 +166,6 @@ void main() {
 			roughness, c.lights[i] 
 		);
 	};
-	/*Lo += BRDF(
-		V, N, inposview, albedo, F0, metallic, roughness, c.lights[0] 
-	);
-	Lo += BRDF(
-		V, N, inposview, albedo, F0, metallic, roughness, c.lights[1] 
-	);*/
 
 	// diffuse
 	vec3 ambient = albedo * 0.02;
