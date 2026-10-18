@@ -1,3 +1,5 @@
+## appears to be the final commit off gitgud. no ai, and no zig here .. -lily
+
 # Example freegnm programs
 
 This repository holds programs to show how to use [freegnm](https://gitgud.io/veiledmerc/freegnm): a GPU library for the PlayStation 4, and [psbc](https://gitgud.io/veiledmerc/psbc): a shader binary compiler also for the PlayStation 4.
